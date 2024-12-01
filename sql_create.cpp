@@ -16,11 +16,12 @@ int sql_create() {
 
     // SQL statement to create a table
     const char* sql_create_table =
-        "CREATE TABLE IF NOT EXISTS users ("
-        "   id INTEGER PRIMARY KEY AUTOINCREMENT,"
-        "   name TEXT NOT NULL,"
-        "   email TEXT NOT NULL UNIQUE"
-        ");";
+    "CREATE TABLE IF NOT EXISTS users ("
+    "   id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    "   name TEXT NOT NULL,"
+    "   email TEXT NOT NULL UNIQUE,"
+    "   role TEXT NOT NULL"
+    ");";
 
     rc = sqlite3_exec(db, sql_create_table, 0, 0, &errMsg);
     if (rc != SQLITE_OK) {
@@ -30,10 +31,10 @@ int sql_create() {
 
     // SQL statement to insert data
     const char* sql_insert_data =
-        "INSERT INTO users (name, email) VALUES "
-        "('Alice', 'alice@example.com'),"
-        "('Bob', 'bob@example.com'),"
-        "('Charlie', 'charlie@example.com');";
+    "INSERT INTO users (name, email, role) VALUES "
+    "('Alice', 'alice@example.com', 'admin'),"
+    "('Bob', 'bob@example.com', 'user'),"
+    "('Charlie', 'charlie@example.com', 'guest');";
 
     rc = sqlite3_exec(db, sql_insert_data, 0, 0, &errMsg);
     if (rc != SQLITE_OK) {

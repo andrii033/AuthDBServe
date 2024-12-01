@@ -7,6 +7,17 @@
 
 void HttpServer::run() {
     try {
+        std::string users = get_user_data_from_db("admin");
+        std::cout<<users<<std::endl;
+        std::string users2 = get_user_data_from_db("user");
+        std::cout<<users2<<std::endl;
+        std::string users3 = get_user_data_from_db("guest");
+        std::cout<<users3<<std::endl;
+    }catch (std::exception const &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return;
+    }
+    try {
         for (;;) {
             tcp::socket socket{ioc_};
             acceptor_.accept(socket);
