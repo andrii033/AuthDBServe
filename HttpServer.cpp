@@ -4,16 +4,18 @@
 
 #include "HttpServer.h"
 
+#include "Data.h"
+
 
 void HttpServer::run() {
     try {
         std::string users = get_user_data_from_db("admin");
-        std::cout<<users<<std::endl;
+        std::cout << users << std::endl;
         std::string users2 = get_user_data_from_db("user");
-        std::cout<<users2<<std::endl;
+        std::cout << users2 << std::endl;
         std::string users3 = get_user_data_from_db("guest");
-        std::cout<<users3<<std::endl;
-    }catch (std::exception const &e) {
+        std::cout << users3 << std::endl;
+    } catch (std::exception const &e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return;
     }
@@ -91,59 +93,61 @@ std::string HttpServer::read_file_to_string(const std::string &file_path) {
 }
 
 void HttpServer::handle_request(http::request<http::string_body> req, http::response<http::string_body> &res) {
-        std::string target = req.target();
+    std::string target = req.target();
 
-        std::cout << "Target: " << target << std::endl;
+    std::cout << "Target: " << target << std::endl;
 
-        if (target == "/") {
-            try {
-                std::string html_content = read_file_to_string("resources/client.html");
+    if (target == "/") {
+        Data data;
+        //data.get_user_data_by_name("Alice");
+        std::cout << "Alice "<< data.get_user_data_by_name("Alice") << std::endl;
+
+        try {
+            std::string html_content = read_file_to_string("resources/client.html");
+            res.result(http::status::ok);
+            res.set(http::field::content_type, "text/html");
+            res.body() = html_content;
+        } catch (const std::exception &e) {
+            res.result(http::status::internal_server_error);
+            res.body() = "Error loading HTML file";
+            std::cerr << e.what() << std::endl;
+        }
+    } else if (target == "/login" && req.method() == http::verb::get) {
+        std::cout << "GET /login" << std::endl;
+        try {
+            std::string login_page = read_file_to_string("resources/login.html");
+            res.result(http::status::ok);
+            res.set(http::field::content_type, "text/html");
+            res.body() = login_page;
+        } catch (const std::exception &e) {
+            res.result(http::status::internal_server_error);
+            res.body() = "Error loading login page";
+            std::cerr << e.what() << std::endl;
+        }
+    } else if (target == "/login" && req.method() == http::verb::post) {
+        std::cout << "POST /login" << std::endl;
+        std::string body = req.body();
+        auto pos_username = body.find("username=");
+        auto pos_password = body.find("password=");
+
+        if (pos_username != std::string::npos && pos_password != std::string::npos) {
+            std::string username = body.substr(pos_username + 9, pos_password - (pos_username + 9) - 1);
+            std::string password = body.substr(pos_password + 9);
+
+            if (username == "username" && password == "password") {
                 res.result(http::status::ok);
-                res.set(http::field::content_type, "text/html");
-                res.body() = html_content;
-            } catch (const std::exception &e) {
-                res.result(http::status::internal_server_error);
-                res.body() = "Error loading HTML file";
-                std::cerr << e.what() << std::endl;
-            }
-        } else if (target == "/login" && req.method() == http::verb::get) {
-            std::cout << "GET /login" << std::endl;
-            try {
-                std::string login_page = read_file_to_string("resources/login.html");
-                res.result(http::status::ok);
-                res.set(http::field::content_type, "text/html");
-                res.body() = login_page;
-            } catch (const std::exception &e) {
-                res.result(http::status::internal_server_error);
-                res.body() = "Error loading login page";
-                std::cerr << e.what() << std::endl;
-            }
-        } else if (target == "/login" && req.method() == http::verb::post) {
-            std::cout << "POST /login" << std::endl;
-            std::string body = req.body();
-            auto pos_username = body.find("username=");
-            auto pos_password = body.find("password=");
-
-            if (pos_username != std::string::npos && pos_password != std::string::npos) {
-                std::string username = body.substr(pos_username + 9, pos_password - (pos_username + 9) - 1);
-                std::string password = body.substr(pos_password + 9);
-
-                if (username == "correct_username" && password == "correct_password") {
-                    res.result(http::status::ok);
-                    res.body() = "Login Successful!";
-                } else {
-                    res.result(http::status::unauthorized);
-                    res.body() = "Invalid username or password";
-                }
+                res.body() = "Login Successful!";
             } else {
-                res.result(http::status::bad_request);
-                res.body() = "Invalid form";
+                res.result(http::status::unauthorized);
+                res.body() = "Invalid username or password";
             }
         } else {
-            res.result(http::status::not_found);
-            res.body() = "Not Found";
+            res.result(http::status::bad_request);
+            res.body() = "Invalid form";
         }
-        res.prepare_payload();
+    } else {
+        res.result(http::status::not_found);
+        res.body() = "Not Found";
     }
-
-
+    res.prepare_payload();
+}

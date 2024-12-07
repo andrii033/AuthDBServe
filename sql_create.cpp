@@ -20,7 +20,8 @@ int sql_create() {
     "   id INTEGER PRIMARY KEY AUTOINCREMENT,"
     "   name TEXT NOT NULL,"
     "   email TEXT NOT NULL UNIQUE,"
-    "   role TEXT NOT NULL"
+    "   role TEXT NOT NULL,"
+    "   password TEXT NOT NULL"
     ");";
 
     rc = sqlite3_exec(db, sql_create_table, 0, 0, &errMsg);
@@ -31,10 +32,10 @@ int sql_create() {
 
     // SQL statement to insert data
     const char* sql_insert_data =
-    "INSERT INTO users (name, email, role) VALUES "
-    "('Alice', 'alice@example.com', 'admin'),"
-    "('Bob', 'bob@example.com', 'user'),"
-    "('Charlie', 'charlie@example.com', 'guest');";
+    "INSERT INTO users (name, email, role, password) VALUES "
+    "('Alice', 'alice@example.com', 'admin', '12345'),"
+    "('Bob', 'bob@example.com', 'user', '12345'),"
+    "('Charlie', 'charlie@example.com', 'guest', '12345');";
 
     rc = sqlite3_exec(db, sql_insert_data, 0, 0, &errMsg);
     if (rc != SQLITE_OK) {

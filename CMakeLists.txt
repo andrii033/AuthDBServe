@@ -17,7 +17,9 @@ add_executable(main main.cpp
         sql_create.cpp
         sql_create.h
         HttpServer.cpp
-        HttpServer.h)
+        HttpServer.h
+        Data.cpp
+        Data.h)
 
 # Link the SQLite3 library
 target_link_libraries(main PUBLIC SQLite::SQLite3)
