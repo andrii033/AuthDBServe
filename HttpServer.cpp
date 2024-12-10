@@ -113,7 +113,18 @@ void HttpServer::handle_request(http::request<http::string_body> req, http::resp
             std::string password = body.substr(pos_password + 9);
 
             if (username == "username" && password == "password") {
+                // Generate a session ID
+                std::string session_id = generate_session_id();
+
+                std::cout << "Session ID: " << session_id << std::endl;
+
+                // Store the session
+                session_store[session_id] = username;
+
+                // Send session ID in a Set-Cookie header
                 res.result(http::status::ok);
+                res.set(http::field::content_type, "text/plain");
+                res.set(http::field::set_cookie, "SESSION_ID=" + session_id + "; Path=/;");
                 res.body() = "Login Successful!";
             } else {
                 res.result(http::status::unauthorized);
@@ -143,6 +154,50 @@ void HttpServer::handle_request(http::request<http::string_body> req, http::resp
         std::cout << "Username: " << form_data["name"] << std::endl;
         std::cout << "Password: " << form_data["password"] << std::endl;
     }
+    if (target == "/protected" && req.method() == http::verb::get) {
+        if (!is_authenticated(req)) {
+            res.result(http::status::unauthorized);
+            res.body() = "Unauthorized access. Please log in.";
+        } else {
+            res.result(http::status::ok);
+            res.body() = "Welcome to the protected page!";
+            res.set(http::field::content_type, "text/plain");
+        }
+    }
     res.prepare_payload();
 }
 
+std::string HttpServer::generate_session_id() {
+    const char charset[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    const size_t length = 32;
+    std::string result;
+    std::default_random_engine rng(std::random_device{}());
+    std::uniform_int_distribution<size_t> dist(0, sizeof(charset) - 2);
+
+    std::generate_n(std::back_inserter(result), length, [&]() { return charset[dist(rng)]; });
+    return result;
+}
+
+bool HttpServer::is_authenticated(const http::request<http::string_body> &req) {
+    // Extract SESSION_ID from "Cookie" header
+    auto it = req.find(http::field::cookie);
+    if (it == req.end()) {
+        return false; // No cookie found
+    }
+
+    std::string cookies = it->value();
+    size_t pos = cookies.find("SESSION_ID=");
+    if (pos == std::string::npos) {
+        return false; // No SESSION_ID found
+    }
+
+    // Extract session ID
+    std::string session_id = cookies.substr(pos + 11); // 11 = length of "SESSION_ID="
+    size_t end_pos = session_id.find(';');
+    if (end_pos != std::string::npos) {
+        session_id = session_id.substr(0, end_pos);
+    }
+
+    // Check if session ID exists in the session store
+    return session_store.find(session_id) != session_store.end();
+}

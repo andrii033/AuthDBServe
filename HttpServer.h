@@ -32,12 +32,14 @@ private:
     std::string db_path_;
     io_context ioc_;
     tcp::acceptor acceptor_;
+    std::unordered_map<std::string, std::string> session_store;
 
     std::string hashPassword(const std::string& password);
     std::string read_file_to_string(const std::string &file_path);
     void handle_request(http::request<http::string_body> req, http::response<http::string_body> &res);
-
     static std::map<std::string, std::string> parse_form_data(const std::string &body);
+    std::string generate_session_id();
+    bool is_authenticated(const http::request<http::string_body> &req);
 };
 
 
