@@ -13,6 +13,8 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <cryptopp/hex.h>
+#include <cryptopp/sha.h>
 
 using namespace boost::beast;
 using namespace boost::asio;
@@ -31,6 +33,7 @@ private:
     io_context ioc_;
     tcp::acceptor acceptor_;
 
+    std::string hashPassword(const std::string& password);
     std::string get_user_data_from_db(const std::string &role);
     std::string read_file_to_string(const std::string &file_path);
     void handle_request(http::request<http::string_body> req, http::response<http::string_body> &res);

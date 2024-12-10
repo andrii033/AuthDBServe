@@ -36,6 +36,21 @@ void HttpServer::run() {
     }
 }
 
+std::string HttpServer::hashPassword(const std::string &password) {
+    CryptoPP::SHA256 hash;
+    std::string digest;
+
+    CryptoPP::StringSource ss(password, true,
+        new CryptoPP::HashFilter(hash,
+            new CryptoPP::HexEncoder(
+                new CryptoPP::StringSink(digest)
+            )
+        )
+    );
+
+    return digest;
+}
+
 std::string HttpServer::get_user_data_from_db(const std::string &role) {
     sqlite3 *db;
     if (sqlite3_open(db_path_.c_str(), &db) != SQLITE_OK) {
@@ -110,7 +125,8 @@ void HttpServer::handle_request(http::request<http::string_body> req, http::resp
             res.body() = "Error loading HTML file";
             std::cerr << e.what() << std::endl;
         }
-    } else if (target == "/login" && req.method() == http::verb::get) {
+    }
+    if (target == "/login" && req.method() == http::verb::get) {
         std::cout << "GET /login" << std::endl;
         try {
             std::string login_page = read_file_to_string("resources/login.html");
@@ -122,7 +138,8 @@ void HttpServer::handle_request(http::request<http::string_body> req, http::resp
             res.body() = "Error loading login page";
             std::cerr << e.what() << std::endl;
         }
-    } else if (target == "/login" && req.method() == http::verb::post) {
+    }
+    if (target == "/login" && req.method() == http::verb::post) {
         std::cout << "POST /login" << std::endl;
         std::string body = req.body();
         auto pos_username = body.find("username=");
@@ -143,9 +160,6 @@ void HttpServer::handle_request(http::request<http::string_body> req, http::resp
             res.result(http::status::bad_request);
             res.body() = "Invalid form";
         }
-    } else {
-        res.result(http::status::not_found);
-        res.body() = "Not Found";
     }
     res.prepare_payload();
 }
