@@ -23,7 +23,8 @@ std::string Data::get_user_data_by_name(const std::string &name) {
     sqlite3_stmt *stmt;
     std::string result;
 
-    if (sqlite3_prepare_v2(db, "SELECT password FROM users WHERE name = ?", -1, &stmt, nullptr) != SQLITE_OK) {
+    if (sqlite3_prepare_v2(db, "SELECT password FROM users WHERE name = ?", -1, &stmt, nullptr)
+            != SQLITE_OK) {
         sqlite3_close(db);
         return "Query preparation failed";
     }
@@ -32,7 +33,7 @@ std::string Data::get_user_data_by_name(const std::string &name) {
     sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_STATIC);
 
     if (sqlite3_step(stmt) == SQLITE_ROW) {
-        result = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
+        result = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0));
     } else {
         result = "User not found";
     }

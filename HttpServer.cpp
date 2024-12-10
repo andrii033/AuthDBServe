@@ -3,7 +3,6 @@
 //
 
 #include "HttpServer.h"
-
 #include "Data.h"
 
 
@@ -40,12 +39,12 @@ void HttpServer::run() {
 std::string HttpServer::get_user_data_from_db(const std::string &role) {
     sqlite3 *db;
     if (sqlite3_open(db_path_.c_str(), &db) != SQLITE_OK) {
-        return "Failed to open database";
+        return "Error: Failed to open database.";
     }
 
     std::string query;
     if (role == "admin") {
-        query = "SELECT * FROM users;";
+        query = "SELECT id, name, email FROM users;";
     } else if (role == "user") {
         query = "SELECT id, name FROM users;";
     } else {
@@ -56,7 +55,7 @@ std::string HttpServer::get_user_data_from_db(const std::string &role) {
     sqlite3_stmt *stmt;
     if (sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
         sqlite3_close(db);
-        return "Query preparation failed";
+        return "Error: Failed to prepare query.";
     }
 
     std::string result = "[";
@@ -65,13 +64,12 @@ std::string HttpServer::get_user_data_from_db(const std::string &role) {
         result += "\"id\": " + std::to_string(sqlite3_column_int(stmt, 0)) + ", ";
         result += "\"name\": \"" + std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1))) + "\"";
         if (role == "admin") {
-            result += ", \"email\": \"" + std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2))) +
-                    "\"";
+            result += ", \"email\": \"" + std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2))) + "\"";
         }
         result += "}, ";
     }
     if (result.size() > 1) {
-        result.pop_back(); // Remove the extra comma
+        result.pop_back(); // Remove the trailing comma
         result.pop_back();
     }
     result += "]";

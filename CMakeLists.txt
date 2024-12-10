@@ -6,11 +6,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 
-# Locate SQLite3
 find_package(SQLite3 REQUIRED)
 
 # Include SQLite3 directories if needed
 include_directories(${SQLite3_INCLUDE_DIRS})
+include_directories(/usr/include/crypto++)
 
 # Create executable
 add_executable(main main.cpp
@@ -21,8 +21,7 @@ add_executable(main main.cpp
         Data.cpp
         Data.h)
 
-# Link the SQLite3 library
-target_link_libraries(main PUBLIC SQLite::SQLite3)
+target_link_libraries(main PUBLIC SQLite::SQLite3 crypto++)
 
 # Copy resources folder to build directory
 add_custom_target(copy_resources ALL
