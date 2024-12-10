@@ -5,25 +5,8 @@
     <title>Simple Client</title>
 </head>
 <body>
-<h1>API Client</h1>
-<button id="fetchData">Fetch Data</button>
-<pre id="output"></pre>
 
-<script>
-    document.getElementById('fetchData').addEventListener('click', function() {
-        fetch('http://localhost:8080/data', {
-            method: 'GET',
-            headers: {
-                'Authorization': 'Bearer user_token'
-            }
-        })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('output').textContent = JSON.stringify(data, null, 2);
-            })
-            .catch(error => console.error('Error fetching data:', error));
-    });
-</script>
-<a href="http://localhost:8080/login">Login</a>
+<a href="http://localhost:8080/login">Login</a><br>
+<a href="http://localhost:8080/register">Registration</a>
 </body>
 </html>

@@ -34,9 +34,10 @@ private:
     tcp::acceptor acceptor_;
 
     std::string hashPassword(const std::string& password);
-    std::string get_user_data_from_db(const std::string &role);
     std::string read_file_to_string(const std::string &file_path);
     void handle_request(http::request<http::string_body> req, http::response<http::string_body> &res);
+
+    static std::map<std::string, std::string> parse_form_data(const std::string &body);
 };
 
 

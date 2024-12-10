@@ -8,17 +8,6 @@
 
 void HttpServer::run() {
     try {
-        std::string users = get_user_data_from_db("admin");
-        std::cout << users << std::endl;
-        std::string users2 = get_user_data_from_db("user");
-        std::cout << users2 << std::endl;
-        std::string users3 = get_user_data_from_db("guest");
-        std::cout << users3 << std::endl;
-    } catch (std::exception const &e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return;
-    }
-    try {
         for (;;) {
             tcp::socket socket{ioc_};
             acceptor_.accept(socket);
@@ -51,49 +40,6 @@ std::string HttpServer::hashPassword(const std::string &password) {
     return digest;
 }
 
-std::string HttpServer::get_user_data_from_db(const std::string &role) {
-    sqlite3 *db;
-    if (sqlite3_open(db_path_.c_str(), &db) != SQLITE_OK) {
-        return "Error: Failed to open database.";
-    }
-
-    std::string query;
-    if (role == "admin") {
-        query = "SELECT id, name, email FROM users;";
-    } else if (role == "user") {
-        query = "SELECT id, name FROM users;";
-    } else {
-        sqlite3_close(db);
-        return "Access Denied";
-    }
-
-    sqlite3_stmt *stmt;
-    if (sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
-        sqlite3_close(db);
-        return "Error: Failed to prepare query.";
-    }
-
-    std::string result = "[";
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-        result += "{";
-        result += "\"id\": " + std::to_string(sqlite3_column_int(stmt, 0)) + ", ";
-        result += "\"name\": \"" + std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1))) + "\"";
-        if (role == "admin") {
-            result += ", \"email\": \"" + std::string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2))) + "\"";
-        }
-        result += "}, ";
-    }
-    if (result.size() > 1) {
-        result.pop_back(); // Remove the trailing comma
-        result.pop_back();
-    }
-    result += "]";
-
-    sqlite3_finalize(stmt);
-    sqlite3_close(db);
-    return result;
-}
-
 std::string HttpServer::read_file_to_string(const std::string &file_path) {
     std::ifstream file_stream(file_path);
     if (!file_stream) {
@@ -105,15 +51,32 @@ std::string HttpServer::read_file_to_string(const std::string &file_path) {
     return buffer.str();
 }
 
+std::map<std::string, std::string> HttpServer::parse_form_data(const std::string &body) {
+    std::map<std::string, std::string> parsed_data;
+    std::stringstream ss(body);
+    std::string key_value_pair;
+
+    while (std::getline(ss, key_value_pair, '&')) {
+        size_t pos = key_value_pair.find('=');
+        if (pos != std::string::npos) {
+            std::string key = key_value_pair.substr(0, pos);
+            std::string value = key_value_pair.substr(pos + 1);
+            parsed_data[key] = value;
+        }
+    }
+
+    return parsed_data;
+}
+
 void HttpServer::handle_request(http::request<http::string_body> req, http::response<http::string_body> &res) {
     std::string target = req.target();
 
     std::cout << "Target: " << target << std::endl;
 
     if (target == "/") {
-        Data data;
-        //data.get_user_data_by_name("Alice");
-        std::cout << "Alice "<< data.get_user_data_by_name("Alice") << std::endl;
+        // Data data;
+        // //data.get_user_data_by_name("Alice");
+        // std::cout << "Alice "<< data.get_user_data_by_name("Alice") << std::endl;
 
         try {
             std::string html_content = read_file_to_string("resources/client.html");
@@ -161,5 +124,25 @@ void HttpServer::handle_request(http::request<http::string_body> req, http::resp
             res.body() = "Invalid form";
         }
     }
+    if (target == "/register" && req.method() == http::verb::get) {
+        std::cout << "GET /register" << std::endl;
+        try {
+            std::string register_page = read_file_to_string("resources/register.html");
+            res.result(http::status::ok);
+            res.set(http::field::content_type, "text/html");
+            res.body() = register_page;
+        } catch (const std::exception &e) {
+            res.result(http::status::internal_server_error);
+            res.body() = "Error loading register page";
+        }
+    }
+    if (target == "/register" && req.method() == http::verb::post) {
+        std::cout << "POST /register" << std::endl;
+        std::cout << req.body() << std::endl;
+        std::map<std::string,std::string> form_data = parse_form_data(req.body());
+        std::cout << "Username: " << form_data["name"] << std::endl;
+        std::cout << "Password: " << form_data["password"] << std::endl;
+    }
     res.prepare_payload();
 }
+
