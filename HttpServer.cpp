@@ -30,11 +30,11 @@ std::string HttpServer::hashPassword(const std::string &password) {
     std::string digest;
 
     CryptoPP::StringSource ss(password, true,
-        new CryptoPP::HashFilter(hash,
-            new CryptoPP::HexEncoder(
-                new CryptoPP::StringSink(digest)
-            )
-        )
+                              new CryptoPP::HashFilter(hash,
+                                                       new CryptoPP::HexEncoder(
+                                                           new CryptoPP::StringSink(digest)
+                                                       )
+                              )
     );
 
     return digest;
@@ -147,13 +147,21 @@ void HttpServer::handle_request(http::request<http::string_body> req, http::resp
             res.body() = "Error loading register page";
         }
     }
+
     if (target == "/register" && req.method() == http::verb::post) {
         std::cout << "POST /register" << std::endl;
         std::cout << req.body() << std::endl;
-        std::map<std::string,std::string> form_data = parse_form_data(req.body());
-        std::cout << "Username: " << form_data["name"] << std::endl;
-        std::cout << "Password: " << form_data["password"] << std::endl;
+        std::map<std::string, std::string> form_data = parse_form_data(req.body());
+        if (form_data["password_confirmation"] == form_data["password"]) {
+            Data data;
+            data.insert_user(form_data["name"], form_data["email"],"user",
+                hashPassword(form_data["password"]));
+            res.result(http::status::ok);
+            res.set(http::field::content_type, "text/plain");
+            res.body() = "Registration Successful!";
+        }
     }
+
     if (target == "/protected" && req.method() == http::verb::get) {
         if (!is_authenticated(req)) {
             res.result(http::status::unauthorized);

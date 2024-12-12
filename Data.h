@@ -13,6 +13,7 @@ public:
     Data();
     ~Data();
     std::string get_user_data_by_name(const std::string &name);
+    bool insert_user(std::string name,std::string email,std::string role, std::string password);
 
 private:
     std::string db_path_;
