@@ -29,14 +29,7 @@ std::string HttpServer::hashPassword(const std::string &password) {
     CryptoPP::SHA256 hash;
     std::string digest;
 
-    CryptoPP::StringSource ss(password, true,
-                              new CryptoPP::HashFilter(hash,
-                                                       new CryptoPP::HexEncoder(
-                                                           new CryptoPP::StringSink(digest)
-                                                       )
-                              )
-    );
-
+    CryptoPP::StringSource ss(password, true,new CryptoPP::HashFilter(hash, new CryptoPP::HexEncoder(new CryptoPP::StringSink(digest))));
     return digest;
 }
 
@@ -51,21 +44,43 @@ std::string HttpServer::read_file_to_string(const std::string &file_path) {
     return buffer.str();
 }
 
-std::map<std::string, std::string> HttpServer::parse_form_data(const std::string &body) {
-    std::map<std::string, std::string> parsed_data;
-    std::stringstream ss(body);
-    std::string key_value_pair;
+std::string HttpServer::url_decode(const std::string &encoded) {
+    std::ostringstream decoded;
+    for (size_t i = 0; i < encoded.length(); ++i) {
+        if (encoded[i] == '%') {
+            // Decode %xx
+            if (i + 2 < encoded.length()) {
+                std::istringstream hex_stream(encoded.substr(i + 1, 2));
+                int hex_value;
+                hex_stream >> std::hex >> hex_value;
+                decoded << static_cast<char>(hex_value);
+                i += 2;
+            }
+        } else if (encoded[i] == '+') {
+            // Decode '+' as ' '
+            decoded << ' ';
+        } else {
+            decoded << encoded[i]; // Copy any other character
+        }
+    }
+    return decoded.str();
+}
 
-    while (std::getline(ss, key_value_pair, '&')) {
-        size_t pos = key_value_pair.find('=');
-        if (pos != std::string::npos) {
-            std::string key = key_value_pair.substr(0, pos);
-            std::string value = key_value_pair.substr(pos + 1);
-            parsed_data[key] = value;
+std::map<std::string, std::string> HttpServer::parse_form_data(const std::string &body) {
+    std::map<std::string, std::string> form_data;
+    std::istringstream stream(body);
+    std::string key_value;
+
+    while (std::getline(stream, key_value, '&')) {
+        size_t delimiter_pos = key_value.find('=');
+        if (delimiter_pos != std::string::npos) {
+            std::string key = url_decode(key_value.substr(0, delimiter_pos));
+            std::string value = url_decode(key_value.substr(delimiter_pos + 1));
+            form_data[key] = value;
         }
     }
 
-    return parsed_data;
+    return form_data;
 }
 
 void HttpServer::handle_request(http::request<http::string_body> req, http::response<http::string_body> &res) {
@@ -74,10 +89,6 @@ void HttpServer::handle_request(http::request<http::string_body> req, http::resp
     std::cout << "Target: " << target << std::endl;
 
     if (target == "/") {
-        // Data data;
-        // //data.get_user_data_by_name("Alice");
-        // std::cout << "Alice "<< data.get_user_data_by_name("Alice") << std::endl;
-
         try {
             std::string html_content = read_file_to_string("resources/client.html");
             res.result(http::status::ok);
@@ -154,8 +165,8 @@ void HttpServer::handle_request(http::request<http::string_body> req, http::resp
         std::map<std::string, std::string> form_data = parse_form_data(req.body());
         if (form_data["password_confirmation"] == form_data["password"]) {
             Data data;
-            data.insert_user(form_data["name"], form_data["email"],"user",
-                hashPassword(form_data["password"]));
+            data.insert_user(form_data["name"], form_data["email"], "user",
+                             hashPassword(form_data["password"]));
             res.result(http::status::ok);
             res.set(http::field::content_type, "text/plain");
             res.body() = "Registration Successful!";

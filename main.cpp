@@ -7,7 +7,7 @@
 #include "sql_create.h"
 
 int main() {
-    //sql_create();
+    sql_create();
 
     const std::string db_path = "users.db";
     HttpServer server(db_path);

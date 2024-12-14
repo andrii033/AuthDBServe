@@ -2,6 +2,17 @@
 #include "sql_create.h"
 #include <sqlite3.h>
 #include <iostream>
+#include <cryptopp/filters.h>
+#include <cryptopp/hex.h>
+#include <cryptopp/sha.h>
+
+std::string hashPassword(const std::string &password) {
+    CryptoPP::SHA256 hash;
+    std::string digest;
+
+    CryptoPP::StringSource ss(password, true,new CryptoPP::HashFilter(hash, new CryptoPP::HexEncoder(new CryptoPP::StringSink(digest))));
+    return digest;
+}
 
 int sql_create() {
     sqlite3* db;
@@ -30,22 +41,30 @@ int sql_create() {
         sqlite3_free(errMsg);
     }
 
-    // SQL statement to insert data
-    const char* sql_insert_data =
-    "INSERT INTO users (name, email, role, password) VALUES "
-    "('Alice', 'alice@example.com', 'admin', '12345'),"
-    "('Bob', 'bob@example.com', 'user', '12345'),"
-    "('Charlie', 'charlie@example.com', 'guest', '12345');";
+    sqlite3_stmt *stmt=nullptr;
+    const char* sql_insert_data = "INSERT INTO users (name, email, role, password) VALUES (?,?,?,?);";
 
-    rc = sqlite3_exec(db, sql_insert_data, 0, 0, &errMsg);
-    if (rc != SQLITE_OK) {
-        std::cerr << "SQL error: " << errMsg << std::endl;
-        sqlite3_free(errMsg);
+    if (sqlite3_prepare_v2(db, sql_insert_data, -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "Failed to prepare SQL query: " << sqlite3_errmsg(db) << std::endl;
+        return false;
     }
+
+    sqlite3_bind_text(stmt, 1, "admin", -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, "admin@example.com", -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 3, "admin", -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 4, hashPassword("admin").c_str(),-1,SQLITE_TRANSIENT);
+
+    if (sqlite3_step(stmt) != SQLITE_DONE) {
+        std::cerr << "Failed to insert data: " << sqlite3_errmsg(db) << std::endl;
+    } else {
+        std::cout << "Data inserted successfully!" << std::endl;
+    }
+
+    // Finalize the statement to release resources
+    sqlite3_finalize(stmt);
 
     // Close the connection
     sqlite3_close(db);
 
-    std::cout << "Database created and populated with sample data successfully." << std::endl;
     return 0;
 }
