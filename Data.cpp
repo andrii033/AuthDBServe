@@ -19,7 +19,7 @@ Data::~Data() {
     }
 }
 
-std::string Data::get_user_data_by_name(const std::string &name) {
+std::string Data::get_user_password_by_name(const std::string &name) {
     sqlite3_stmt *stmt;
     std::string result;
 

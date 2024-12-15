@@ -60,7 +60,7 @@ std::string HttpServer::url_decode(const std::string &encoded) {
             // Decode '+' as ' '
             decoded << ' ';
         } else {
-            decoded << encoded[i]; // Copy any other character
+            decoded << encoded[i];
         }
     }
     return decoded.str();
@@ -122,8 +122,12 @@ void HttpServer::handle_request(http::request<http::string_body> req, http::resp
         if (pos_username != std::string::npos && pos_password != std::string::npos) {
             std::string username = body.substr(pos_username + 9, pos_password - (pos_username + 9) - 1);
             std::string password = body.substr(pos_password + 9);
+            password = hashPassword(password);
 
-            if (username == "username" && password == "password") {
+            Data data;
+            std::string user_password = data.get_user_password_by_name(username);
+
+            if (password == user_password) {
                 // Generate a session ID
                 std::string session_id = generate_session_id();
 

@@ -12,7 +12,7 @@ class Data {
 public:
     Data();
     ~Data();
-    std::string get_user_data_by_name(const std::string &name);
+    std::string get_user_password_by_name(const std::string &name);
     bool insert_user(std::string name,std::string email,std::string role, std::string password);
 
 private:
