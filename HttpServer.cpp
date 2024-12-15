@@ -29,7 +29,9 @@ std::string HttpServer::hashPassword(const std::string &password) {
     CryptoPP::SHA256 hash;
     std::string digest;
 
-    CryptoPP::StringSource ss(password, true,new CryptoPP::HashFilter(hash, new CryptoPP::HexEncoder(new CryptoPP::StringSink(digest))));
+    CryptoPP::StringSource ss(password, true,
+                              new CryptoPP::HashFilter(
+                                  hash, new CryptoPP::HexEncoder(new CryptoPP::StringSink(digest))));
     return digest;
 }
 
@@ -127,7 +129,10 @@ void HttpServer::handle_request(http::request<http::string_body> req, http::resp
             Data data;
             std::string user_password = data.get_user_password_by_name(username);
 
-            if (password == user_password) {
+            if (user_password.empty()) {
+                res.result(http::status::unauthorized);
+                res.body() = "Invalid username or password";
+            } else if (password == user_password) {
                 // Generate a session ID
                 std::string session_id = generate_session_id();
 
