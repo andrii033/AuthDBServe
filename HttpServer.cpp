@@ -139,7 +139,7 @@ void HttpServer::handle_request(http::request<http::string_body> req, http::resp
                 std::cout << "Session ID: " << session_id << std::endl;
 
                 // Store the session
-                session_store[session_id] = username;
+                session_store[session_id] = SessionData{username,"admin"};
 
                 // Send session ID in a Set-Cookie header
                 res.result(http::status::ok);

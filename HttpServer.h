@@ -29,10 +29,15 @@ public:
     void run();
 
 private:
+    struct SessionData {
+        std::string username;
+        std::string role;  // Example roles: "admin", "user"
+    };
+
     std::string db_path_;
     io_context ioc_;
     tcp::acceptor acceptor_;
-    std::unordered_map<std::string, std::string> session_store;
+    std::unordered_map<std::string, SessionData> session_store;
     std::string hashPassword(const std::string& password);
     std::string read_file_to_string(const std::string &file_path);
 
